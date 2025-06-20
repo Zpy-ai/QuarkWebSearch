@@ -3,15 +3,16 @@ from http import HTTPStatus
 from fastapi import FastAPI
 from pydantic import BaseModel
 import json
-import sys
+from typing import Literal
 
 
 # 定义FastAPI应用
-app = FastAPI(title="Web Search Pro API", description="基于夸克搜索的AI助手API")
+app = FastAPI(title="Web Search API", description="基于夸克搜索的AI助手API")
 
 # 请求模型
 class SearchRequest(BaseModel):
     query: str
+    tools: Literal ["quark_search"]
 
 
 # 响应模型
@@ -96,4 +97,4 @@ async def search_endpoint(request: SearchRequest):
         return response
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app="streamingAPI:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(app="non_streamingAPI:app", host="0.0.0.0", port=8000, reload=False)
