@@ -32,7 +32,7 @@ class SearchRequest(BaseModel):
 
 # 响应模型
 class SearchResponse(BaseModel):
-    response: dict
+    response: str
     tools_used: str
 
 dashscope.api_key = "sk-139a40229c0e4bd58191a7a2f8c9c8f3"
@@ -110,12 +110,22 @@ async def search_endpoint(request: SearchRequest ,
             print("\n助手的回应：")
             print(json.dumps(last_message, ensure_ascii=False, default=lambda o: o.__dict__, sort_keys=True, indent=4))
 
-        response = {
-                "response": json.loads(json.dumps(last_message, ensure_ascii=False, default=lambda o: o.__dict__)),
+
+        # 提取消息内容中的文本值
+            assistant_text = ""
+            if hasattr(last_message, 'content') and last_message.content:
+                for content_item in last_message.content:
+                    if hasattr(content_item, 'text') and hasattr(content_item.text, 'value'):
+                        assistant_text += content_item.text.value
+            
+            # 构建响应
+            response = {
+                "response": assistant_text,
                 "tools_used": "quark_search"
             }
-        
-        return response
+            
+            return response
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app="non_streaming:app", host="0.0.0.0", port=8000, reload=False)
