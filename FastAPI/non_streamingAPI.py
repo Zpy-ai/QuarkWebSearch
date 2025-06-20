@@ -1,13 +1,28 @@
 import dashscope
 from http import HTTPStatus
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel
 import json
 from typing import Literal
+import os
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+# 环境变量传入
+sk_key = os.environ.get("sk-key", "sk-proj-mimouse")
 
 # 定义FastAPI应用
 app = FastAPI(title="Web Search API", description="基于夸克搜索的AI助手API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+security = HTTPBearer()
 
 # 请求模型
 class SearchRequest(BaseModel):
@@ -43,7 +58,13 @@ def create_search_assistant():
 )
 
 @app.post("/search", response_model=SearchResponse)
-async def search_endpoint(request: SearchRequest):
+async def search_endpoint(request: SearchRequest ,
+                          credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if credentials.credentials != sk_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization code",
+        )
     # 创建搜索助手
     search_assistant = create_search_assistant()
     if not check_status(search_assistant, "助手创建"):
@@ -97,4 +118,4 @@ async def search_endpoint(request: SearchRequest):
         return response
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app="streamingAPI:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(app="non_streaming:app", host="0.0.0.0", port=8000, reload=False)
